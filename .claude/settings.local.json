@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -m 5 http://localhost:8001/v1/models)",
+      "Bash(echo \"---exit:$?---\")",
+      "Bash(curl -s -m 5 http://localhost:8000/v1/models)",
+      "Bash(nvidia-smi)",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/python scripts/test_vllm.py)",
+      "Bash(curl -s -m 30 http://localhost:8001/v1/chat/completions -H \"Content-Type: application/json\" -d '{\"model\":\"Qwen/Qwen2.5-3B-Instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"max_tokens\":16}')",
+      "Bash(curl -s -m 30 http://localhost:8001/v1/completions -H \"Content-Type: application/json\" -d '{\"model\":\"Qwen/Qwen2.5-3B-Instruct\",\"prompt\":\"Hello\",\"max_tokens\":16}')",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/python -c \"import vllm; print\\(vllm.__version__\\)\")",
+      "Bash(nvidia-smi --query-compute-apps=pid,used_memory,gpu_uuid --format=csv)",
+      "Bash(nvidia-smi --query-gpu=index,uuid,memory.used,memory.free --format=csv)",
+      "Bash(CUDA_VISIBLE_DEVICES=1 HF_ENDPOINT=https://hf-mirror.com /home/yf805/miniconda3/envs/paper2code/bin/vllm serve Qwen/Qwen2.5-3B-Instruct --served-model-name Qwen/Qwen2.5-3B-Instruct --gpu-memory-utilization 0.85 --max-model-len 8192 --port 8002)",
+      "Bash(echo \"launched pid $!\")",
+      "Bash(curl -s -m 60 http://localhost:8002/v1/chat/completions -H \"Content-Type: application/json\" -d '{\"model\":\"Qwen/Qwen2.5-3B-Instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"用一句话介绍KV cache\"}],\"max_tokens\":64}')",
+      "Read(//tmp/**)",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/pip install *)",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/pip config *)",
+      "Bash(curl -s -m 15 https://pypi.org/pypi/pyairports/json)",
+      "Bash(curl -s -m 15 https://pypi.org/pypi/requests/json)",
+      "Bash(curl -s -m 15 https://pypi.org/pypi/pyairports/0.0.1/json)",
+      "Bash(curl -s -m 30 -o pyairports-0.0.1.tar.gz \"https://files.pythonhosted.org/packages/2f/5e/2b9f07c89538e74e4c27bb303c6bdb6c0da73d0edf6f724ca51453d330b3/pyairports-0.0.1.tar.gz\")",
+      "Bash(stat -c%s pyairports-0.0.1.tar.gz)",
+      "Bash(echo \"exit:$?  size:$\\(stat -c%s pyairports-0.0.1.tar.gz 2>/dev/null\\)\")",
+      "Bash(tar tzf *)",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/pip index *)",
+      "Bash(curl -s -m 20 \"https://raw.githubusercontent.com/NICTA/pyairports/master/pyairports/airports.py\")",
+      "Bash(echo \"exit:$?\")",
+      "Bash(git --version)",
+      "Bash(/home/yf805/miniconda3/envs/paper2code/bin/python -c ' *)",
+      "Bash(pkill -f \"port 8002\")",
+      "Bash(kill -0 210094)",
+      "Bash(rm -f /tmp/pyairports-0.0.1.tar.gz /tmp/vllm_dbg.log)",
+      "Bash(nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader)"
+    ]
+  }
+}
