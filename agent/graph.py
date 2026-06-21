@@ -24,16 +24,16 @@ def planner_node(state: AgentState) -> dict:
 
 # ---------- 节点 2: Executor ----------
 def executor_node(state: AgentState) -> dict:
-    """根据规划和论文内容，生成结构化复现报告。"""
+    """生成结构化复现报告，带校验和重试。"""
     plan = state.get("plan", "")
     paper = state["paper_text"]
-    context = state.get("retrieved_context", "")  # Day 5 检索结果接入
+    context = state.get("retrieved_context", "")
 
     system = (
-        "你是一个 ML 论文复现专家。你的任务是输出一份结构化复现报告。"
-        "严格只输出一个 JSON 对象，不要输出任何解释文字，不要使用 markdown 代码块标记。"
+        "你是一个 ML 论文复现专家，输出结构化复现报告。"
+        "严格只输出一个 JSON 对象，不要解释文字，不要 markdown 代码块标记。"
     )
-    user = f"""根据以下复现规划和论文内容，生成结构化复现报告。
+    base_user = f"""根据以下规划和论文内容，生成结构化复现报告。
 
 复现规划：
 {plan}
@@ -41,28 +41,37 @@ def executor_node(state: AgentState) -> dict:
 论文内容：
 {context or paper[:6000]}
 
-请输出符合以下结构的 JSON（只输出 JSON 本身）：
+请输出符合以下结构的 JSON（只输出 JSON）：
 {{
   "title": "论文标题",
-  "summary": "方法的一句话概述",
-  "model_skeleton": "模型骨架的伪代码或 PyTorch 代码片段",
-  "hyperparameters": [
-    {{"name": "learning_rate", "value": "0.001", "source": "论文第4节"}}
-  ],
-  "risks": ["复现风险点1", "复现风险点2"]
+  "summary": "方法一句话概述",
+  "model_skeleton": "模型骨架代码（必须有内容）",
+  "hyperparameters": [{{"name": "learning_rate", "value": "0.001", "source": "第4节"}}],
+  "risks": ["风险点1", "风险点2"]
 }}"""
 
-    raw = llm.chat(system, user, max_tokens=2048)
+    MAX_RETRIES = 3
+    raw = ""
+    feedback = ""  # 上一轮的错误反馈
 
-    report = None
-    try:
-        cleaned = llm.extract_json(raw)
-        report = ReproReport.model_validate_json(cleaned)
-    except Exception as e:
-        print(f"[executor] JSON 解析失败: {e}")
-        print(f"[executor] 原始输出前500字: {raw[:500]}")
+    for attempt in range(1, MAX_RETRIES + 1):
+        user = base_user
+        if feedback:
+            user += f"\n\n注意：你上一次的输出有问题：{feedback}。请修正后重新输出完整 JSON。"
 
-    return {"report": report, "raw_output": raw}
+        raw = llm.chat(system, user, max_tokens=2048)
+        try:
+            cleaned = llm.extract_json(raw)
+            report = ReproReport.model_validate_json(cleaned)
+            print(f"[executor] 第 {attempt} 次尝试成功")
+            return {"report": report, "raw_output": raw}
+        except Exception as e:
+            feedback = str(e)
+            print(f"[executor] 第 {attempt} 次失败: {feedback}")
+
+    # 重试上限耗尽，返回失败信号
+    print(f"[executor] {MAX_RETRIES} 次尝试均失败，放弃")
+    return {"report": None, "raw_output": raw}
 
 # ---------- 组图 ----------
 def build_graph():
