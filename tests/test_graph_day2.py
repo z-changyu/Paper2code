@@ -2,6 +2,8 @@
 from langgraph.graph import StateGraph, END
 from schemas.models import AgentState
 from agent.graph import planner_node
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 临时搭一个只含 Planner 的最小图，验证 LangGraph 机制本身通了
 g = StateGraph(AgentState)

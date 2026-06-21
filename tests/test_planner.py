@@ -1,5 +1,7 @@
 """Day 2: 单独测试 Planner 节点（不经过图）。"""
 from agent.graph import planner_node
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 手动构造一段论文文本作为输入（先用摘要级别的短文本）
 sample_paper = """

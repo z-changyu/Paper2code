@@ -29,26 +29,40 @@ def executor_node(state: AgentState) -> dict:
     paper = state["paper_text"]
     context = state.get("retrieved_context", "")  # Day 5 检索结果接入
 
-    # TODO(Day4): 在 prompt 里写清楚 ReproReport 的 JSON schema 要求
-    system = "你是一个 ML 论文复现专家，只输出 JSON，不要任何额外文字。"
-    user = (
-        f"复现规划：\n{plan}\n\n"
-        f"相关论文片段：\n{context or paper[:6000]}\n\n"
-        "请输出符合以下结构的 JSON：title, summary, model_skeleton, "
-        "hyperparameters(列表，每项含 name/value/source), risks(字符串列表)。"
+    system = (
+        "你是一个 ML 论文复现专家。你的任务是输出一份结构化复现报告。"
+        "严格只输出一个 JSON 对象，不要输出任何解释文字，不要使用 markdown 代码块标记。"
     )
+    user = f"""根据以下复现规划和论文内容，生成结构化复现报告。
+
+复现规划：
+{plan}
+
+论文内容：
+{context or paper[:6000]}
+
+请输出符合以下结构的 JSON（只输出 JSON 本身）：
+{{
+  "title": "论文标题",
+  "summary": "方法的一句话概述",
+  "model_skeleton": "模型骨架的伪代码或 PyTorch 代码片段",
+  "hyperparameters": [
+    {{"name": "learning_rate", "value": "0.001", "source": "论文第4节"}}
+  ],
+  "risks": ["复现风险点1", "复现风险点2"]
+}}"""
+
     raw = llm.chat(system, user, max_tokens=2048)
 
-    # Day 4: 用 Pydantic 解析校验
     report = None
     try:
         cleaned = llm.extract_json(raw)
         report = ReproReport.model_validate_json(cleaned)
     except Exception as e:
-        print(f"[executor] JSON 解析失败，先返回原始文本。错误: {e}")
+        print(f"[executor] JSON 解析失败: {e}")
+        print(f"[executor] 原始输出前500字: {raw[:500]}")
 
     return {"report": report, "raw_output": raw}
-
 
 # ---------- 组图 ----------
 def build_graph():
