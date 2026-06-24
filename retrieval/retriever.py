@@ -18,7 +18,7 @@ from sentence_transformers import SentenceTransformer
 class SimpleRetriever:
     """第一周用的极简内存检索器。够跑通链路，不追求质量。"""
 
-    def __init__(self, model_name: str = "BAAI/bge-small-zh-v1.5"):
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
         # 轻量 embedding 模型，第一周够用；第二周换 BGE-M3
         self.encoder = SentenceTransformer(model_name)
         self.chunks: list[str] = []

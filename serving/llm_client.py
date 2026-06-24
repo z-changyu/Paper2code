@@ -11,7 +11,7 @@ import re
 from openai import OpenAI
 
 # 与 start_vllm.sh 里的 --served-model-name 保持一致
-DEFAULT_MODEL = "Qwen/Qwen2.5-3B-Instruct"
+DEFAULT_MODEL = "Qwen2.5-14B-Instruct"
 BASE_URL = "http://localhost:8001/v1"
 
 

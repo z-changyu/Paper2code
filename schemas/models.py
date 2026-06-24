@@ -59,6 +59,7 @@ class AgentState(TypedDict, total=False):
 
     第一周字段保持精简，第二周加 Critic 后会再加 'critique'、'retry_count' 等。
     """
+    pdf_path: str  
     paper_text: str             # 输入：论文全文（Day 2-3 先手动喂文本，Day 5 接 PDF）
     retrieved_context: str      # 检索到的相关片段（Day 5 填充）
     plan: str                   # Planner 节点产出：复现步骤规划

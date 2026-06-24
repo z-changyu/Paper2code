@@ -14,7 +14,7 @@ from openai import OpenAI
 client = OpenAI(base_url="http://localhost:8001/v1", api_key="not-needed")
 
 # 模型名要和启动 vLLM 时 --served-model-name 一致（默认是模型路径）
-MODEL = "Qwen/Qwen2.5-3B-Instruct"
+MODEL = "Qwen/Qwen2.5-14B-Instruct"
 
 
 def main():

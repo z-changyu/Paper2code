@@ -9,7 +9,41 @@ LangGraph 编排逻辑 —— Day 2-3 实现，第二周升级。
 from langgraph.graph import StateGraph, END
 from schemas.models import AgentState, ReproReport
 from serving.llm_client import llm
+from retrieval.retriever import SimpleRetriever
 
+# 全局检索器（避免每次重新加载模型）
+_retriever = None
+
+def get_retriever():
+    global _retriever
+    if _retriever is None:
+        _retriever = SimpleRetriever()
+    return _retriever
+
+
+def retriever_node(state: AgentState) -> dict:
+    """加载 PDF、检索关键内容，写入 retrieved_context。"""
+    pdf_path = state.get("pdf_path")
+    if not pdf_path:
+        # 没给 PDF 就跳过检索，用已有的 paper_text
+        return {}
+
+    r = get_retriever()
+    r.load_pdf(pdf_path)
+
+    # 用几个面向"复现"的查询，把关键信息都检索出来拼一起
+    queries = [
+        "model architecture and network structure",
+        "training hyperparameters learning rate batch size epochs",
+        "dataset and experimental setup",
+    ]
+    chunks = []
+    for q in queries:
+        chunks.append(r.search(q, top_k=2))
+    context = "\n---\n".join(chunks)
+
+    # 同时把检索到的内容也作为 paper_text（供 Planner 用）
+    return {"retrieved_context": context, "paper_text": context}
 
 # ---------- 节点 1: Planner ----------
 def planner_node(state: AgentState) -> dict:
@@ -75,16 +109,15 @@ def executor_node(state: AgentState) -> dict:
 
 # ---------- 组图 ----------
 def build_graph():
-    """构建并编译 LangGraph 状态图。"""
     g = StateGraph(AgentState)
+    g.add_node("retriever", retriever_node)   # 新增
     g.add_node("planner", planner_node)
     g.add_node("executor", executor_node)
 
-    g.set_entry_point("planner")
+    g.set_entry_point("retriever")            # 入口改成 retriever
+    g.add_edge("retriever", "planner")        # 检索→规划
     g.add_edge("planner", "executor")
     g.add_edge("executor", END)
-
-    # 第二周：在这里加 critic 节点和条件边
     return g.compile()
 
 
