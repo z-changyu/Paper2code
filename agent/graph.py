@@ -9,7 +9,7 @@ LangGraph 编排逻辑 —— Day 2-3 实现，第二周升级。
 from langgraph.graph import StateGraph, END
 from schemas.models import AgentState, ReproReport
 from serving.llm_client import llm
-from retrieval.retriever import SimpleRetriever
+from retrieval.advanced_retriever import AdvancedRetriever
 
 # 全局检索器（避免每次重新加载模型）
 _retriever = None
@@ -17,7 +17,7 @@ _retriever = None
 def get_retriever():
     global _retriever
     if _retriever is None:
-        _retriever = SimpleRetriever()
+        _retriever = AdvancedRetriever()
     return _retriever
 
 
