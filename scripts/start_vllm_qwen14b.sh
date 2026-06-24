@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Day 6: 单卡 3090 部署 Qwen2.5-14B AWQ 量化版
 set -e
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0
 
 MODEL_PATH="./models/Qwen2.5-14B-Instruct-AWQ"
 SERVE_NAME="Qwen2.5-14B-Instruct"

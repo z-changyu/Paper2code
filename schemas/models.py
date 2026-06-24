@@ -65,3 +65,5 @@ class AgentState(TypedDict, total=False):
     plan: str                   # Planner 节点产出：复现步骤规划
     report: Optional[ReproReport]  # Executor 节点产出：最终结构化报告
     raw_output: str             # Executor 的原始文本输出（调试用，解析失败时看这个）
+    critique: str               # Critic 的评判反馈
+    retry_count: int            # 已重试次数，用于熔断
