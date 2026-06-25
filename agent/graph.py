@@ -10,11 +10,15 @@ from langgraph.graph import StateGraph, END
 from schemas.models import AgentState, ReproReport
 from serving.llm_client import llm
 # from retrieval.advanced_retriever import AdvancedRetriever
-import requests
+# import requests
+import asyncio
+from mcp import ClientSession
+from mcp.client.sse import sse_client
 
 # 全局检索器（避免每次重新加载模型）
 # _retriever = None
-RETRIEVAL_SERVICE = "http://localhost:8002"
+# RETRIEVAL_SERVICE = "http://localhost:8002"
+MCP_SERVER_URL = "http://localhost:8000/sse"
 
 # def get_retriever():
 #     global _retriever
@@ -22,28 +26,34 @@ RETRIEVAL_SERVICE = "http://localhost:8002"
 #         _retriever = AdvancedRetriever()
 #     return _retriever
 
+async def _mcp_retrieve(pdf_path: str, queries: list[str]) -> str:
+    """异步:连 MCP server,先 index 再多次 retrieve,返回拼接的检索结果。"""
+    async with sse_client(MCP_SERVER_URL) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            # 1) 先让 server 解析并入库
+            await session.call_tool("index_pdf", {"pdf_path": pdf_path})
+            # 2) 多个查询检索
+            chunks = []
+            for q in queries:
+                res = await session.call_tool("retrieve", {"query": q, "top_k": 2})
+                chunks.append(res.content[0].text)
+            return "\n---\n".join(chunks)
+
 
 def retriever_node(state: AgentState) -> dict:
-    """通过 HTTP 调用独立的检索服务(跨环境)。"""
+    """通过 MCP 协议调用独立检索服务(跨环境)。"""
     pdf_path = state.get("pdf_path")
     if not pdf_path:
         return {}
 
-    # 1) 让检索服务解析并入库
-    requests.post(f"{RETRIEVAL_SERVICE}/index", json={"pdf_path": pdf_path}, timeout=300)
-
-    # 2) 多个查询检索关键信息
     queries = [
         "model architecture network structure",
         "training hyperparameters learning rate batch size epochs",
         "dataset experimental setup",
     ]
-    chunks = []
-    for q in queries:
-        resp = requests.post(f"{RETRIEVAL_SERVICE}/retrieve",
-                             json={"query": q, "top_k": 2}, timeout=60)
-        chunks.append(resp.json()["results"])
-    context = "\n---\n".join(chunks)
+    # 同步节点里用 asyncio.run 执行异步的 MCP 调用(桥接)
+    context = asyncio.run(_mcp_retrieve(pdf_path, queries))
 
     return {"retrieved_context": context, "paper_text": context}
 

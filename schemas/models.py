@@ -47,7 +47,14 @@ class ReproReport(BaseModel):
             raise ValueError("model_skeleton 不能为空")
         return v
 
-
+class JudgeScore(BaseModel):
+    """LLM-as-Judge 的评分结果。"""
+    completeness: int = Field(description="完整性 1-5")
+    accuracy: int = Field(description="准确性 1-5")
+    actionability: int = Field(description="可操作性 1-5")
+    risk_identification: int = Field(description="风险识别 1-5")
+    overall: float = Field(description="综合得分 1-5")
+    reasoning: str = Field(description="打分理由")
 
 # ---------- 2. LangGraph 的共享状态 ----------
 
