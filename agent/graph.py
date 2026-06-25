@@ -9,40 +9,42 @@ LangGraph 编排逻辑 —— Day 2-3 实现，第二周升级。
 from langgraph.graph import StateGraph, END
 from schemas.models import AgentState, ReproReport
 from serving.llm_client import llm
-from retrieval.advanced_retriever import AdvancedRetriever
+# from retrieval.advanced_retriever import AdvancedRetriever
+import requests
 
 # 全局检索器（避免每次重新加载模型）
-_retriever = None
+# _retriever = None
+RETRIEVAL_SERVICE = "http://localhost:8002"
 
-def get_retriever():
-    global _retriever
-    if _retriever is None:
-        _retriever = AdvancedRetriever()
-    return _retriever
+# def get_retriever():
+#     global _retriever
+#     if _retriever is None:
+#         _retriever = AdvancedRetriever()
+#     return _retriever
 
 
 def retriever_node(state: AgentState) -> dict:
-    """加载 PDF、检索关键内容，写入 retrieved_context。"""
+    """通过 HTTP 调用独立的检索服务(跨环境)。"""
     pdf_path = state.get("pdf_path")
     if not pdf_path:
-        # 没给 PDF 就跳过检索，用已有的 paper_text
         return {}
 
-    r = get_retriever()
-    r.load_pdf(pdf_path)
+    # 1) 让检索服务解析并入库
+    requests.post(f"{RETRIEVAL_SERVICE}/index", json={"pdf_path": pdf_path}, timeout=300)
 
-    # 用几个面向"复现"的查询，把关键信息都检索出来拼一起
+    # 2) 多个查询检索关键信息
     queries = [
-        "model architecture and network structure",
+        "model architecture network structure",
         "training hyperparameters learning rate batch size epochs",
-        "dataset and experimental setup",
+        "dataset experimental setup",
     ]
     chunks = []
     for q in queries:
-        chunks.append(r.search(q, top_k=2))
+        resp = requests.post(f"{RETRIEVAL_SERVICE}/retrieve",
+                             json={"query": q, "top_k": 2}, timeout=60)
+        chunks.append(resp.json()["results"])
     context = "\n---\n".join(chunks)
 
-    # 同时把检索到的内容也作为 paper_text（供 Planner 用）
     return {"retrieved_context": context, "paper_text": context}
 
 # ---------- 节点 1: Planner ----------
