@@ -3,7 +3,6 @@
 > 一个将 ML 论文自动转化为结构化复现报告（模型骨架 + 超参配置 + 风险清单）的 Agent 系统。
 > 基于 LangGraph 编排、vLLM 本地推理、RAG 检索增强，将论文复现的前置调研时间从数天压缩至分钟级。
 
-<!-- 建议在此处放一张 /generate_report 接口返回结果或 /docs 页面的截图 -->
 
 ---
 
@@ -133,7 +132,7 @@ curl -X POST http://localhost:8080/generate_report \
 
 | 对比 | 结果 |
 |------|------|
-| 完整 Agent vs naive RAG | **Agent 2 胜 / 0 负 / 4 平** |
+| 完整 Agent vs naive RAG | **Agent 4 胜 / 0 负 / 2 平** |
 
 结论：Agent 架构相比 naive RAG **未现劣势，并在部分样本上更优**。在方法清晰的经典论文上两者差异不大；Agent 的规划与评判机制在更复杂、信息分散的任务上预期收益更明显。
 
